@@ -1,10 +1,8 @@
-import {Drawable} from "./Drawable";
+import {ChartElement} from "./ChartElement";
 
-export class Background implements Drawable {
-    private ctx: CanvasRenderingContext2D;
-
-    constructor(context: CanvasRenderingContext2D) {
-        this.ctx = context;
+export class Background extends ChartElement {
+    public constructor(context: CanvasRenderingContext2D) {
+        super(context);
     }
 
     draw(currentTimeMillis: DOMHighResTimeStamp): void {
