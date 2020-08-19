@@ -1,12 +1,10 @@
-import {AnimationController} from "./AnimationController";
-import {Chart} from "./Chart";
+import {ParsingError} from "./errors/ParsingError";
+import {Point2D} from "./Point2D";
 import {PointParser} from "./PointParser";
 import {CSVParser} from "./CSVParser";
-import {Point2D} from "./Point2D";
-import {ParsingError} from "./errors/ParsingError";
-import {Space2D} from "./Space2D";
-import {Mapper2D} from "./Mapper2D";
-import {Rectangle} from "./Rectangle";
+import {ForecastChart} from "./ForecastChart";
+import {BestFit} from "./BestFit";
+import {Result} from "regression";
 
 function lineBreak(): Element {
     return document.createElement("br");
@@ -32,6 +30,7 @@ let htmlCanvasElement: HTMLCanvasElement = <HTMLCanvasElement>document.createEle
 htmlCanvasElement.classList.add("forecasting-canvas");
 document.body.appendChild(htmlCanvasElement);
 setDimensions(htmlCanvasElement, 1280, 720);
+let ctx = htmlCanvasElement.getContext("2d");
 
 document.body.appendChild(lineBreak());
 
@@ -41,16 +40,7 @@ dataInput.setAttribute("rows", "10");
 dataInput.setAttribute("cols", "50");
 document.body.appendChild(dataInput);
 
-let graphSpace: Space2D = new Space2D(0, 100, 0, 100);
-let pixelSpace: Space2D = new Space2D(0, htmlCanvasElement.width, 0, htmlCanvasElement.height);
-let mapper: Mapper2D = new Mapper2D(graphSpace, pixelSpace);
-
-let chartBounds = Rectangle.ofTopLeft(0, 0, htmlCanvasElement.width, htmlCanvasElement.height);
-let context = htmlCanvasElement.getContext("2d");
-let chart: Chart = new Chart(context, mapper, chartBounds);
-
-let controller: AnimationController = new AnimationController();
-controller.enableDraw(chart.draw.bind(chart));
+let chart = new ForecastChart(ctx);
 
 let pointParser = new PointParser(new CSVParser());
 dataInput.addEventListener("input", (e: Event) => {
@@ -63,6 +53,17 @@ dataInput.addEventListener("input", (e: Event) => {
         }
     }
     if (points.length !== 0) {
-        chart.setDisplayedPoints(points);
+        chart.setData(points);
+        let result: Result = new BestFit().runFit(points);
+        let bestFit: Point2D[] = getBestFit(points, result);
+        chart.setBestFit(bestFit);
     }
 });
+
+function getBestFit(points: Point2D[], result: Result) {
+    let bestFit = [];
+    for (let i = 0; i < points.length; i++) {
+        bestFit.push(new Point2D(points[i].x, result.predict(points[i].x)[1]));
+    }
+    return bestFit
+}

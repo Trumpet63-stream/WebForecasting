@@ -18,7 +18,11 @@
     "webpack-cli": "^3.3.12"
   },
   "dependencies": {
+    "@types/chart.js": "^2.9.24",
     "@types/jest": "^26.0.10",
-    "csv-string": "^4.0.1"
+    "@types/regression": "^2.0.0",
+    "chart.js": "^2.9.3",
+    "csv-string": "^4.0.1",
+    "regression": "^2.0.1"
   }
 }
