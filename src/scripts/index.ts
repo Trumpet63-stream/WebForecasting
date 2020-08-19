@@ -6,6 +6,7 @@ import {Point2D} from "./Point2D";
 import {ParsingError} from "./errors/ParsingError";
 import {Space2D} from "./Space2D";
 import {Mapper2D} from "./Mapper2D";
+import {Rectangle} from "./Rectangle";
 
 function lineBreak(): Element {
     return document.createElement("br");
@@ -40,14 +41,16 @@ dataInput.setAttribute("rows", "10");
 dataInput.setAttribute("cols", "50");
 document.body.appendChild(dataInput);
 
-let chart: Chart = new Chart(htmlCanvasElement.getContext("2d"));
-
-let controller: AnimationController = new AnimationController();
-controller.enableDraw(chart.draw.bind(chart));
-
 let graphSpace: Space2D = new Space2D(0, 100, 0, 100);
 let pixelSpace: Space2D = new Space2D(0, htmlCanvasElement.width, 0, htmlCanvasElement.height);
 let mapper: Mapper2D = new Mapper2D(graphSpace, pixelSpace);
+
+let chartBounds = Rectangle.ofTopLeft(0, 0, htmlCanvasElement.width, htmlCanvasElement.height);
+let context = htmlCanvasElement.getContext("2d");
+let chart: Chart = new Chart(context, mapper, chartBounds);
+
+let controller: AnimationController = new AnimationController();
+controller.enableDraw(chart.draw.bind(chart));
 
 let pointParser = new PointParser(new CSVParser());
 dataInput.addEventListener("input", (e: Event) => {
@@ -60,7 +63,6 @@ dataInput.addEventListener("input", (e: Event) => {
         }
     }
     if (points.length !== 0) {
-        let mappedPoints: Point2D[] = points.map(mapper.graphToPixel.bind(mapper));
-        chart.setDisplayedPoints(mappedPoints);
+        chart.setDisplayedPoints(points);
     }
 });
