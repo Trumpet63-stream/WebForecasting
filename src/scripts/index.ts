@@ -3,12 +3,11 @@ import {Point2D} from "./Point2D";
 import {PointParser} from "./PointParser";
 import {CSVParser} from "./CSVParser";
 import {ForecastChart} from "./ForecastChart";
-import {BestFit} from "./BestFit";
+import {RegressionJS} from "./RegressionJS";
 import {Result} from "regression";
-
-function lineBreak(): Element {
-    return document.createElement("br");
-}
+import {LinkedMenu} from "./LinkedMenu";
+import {LinkedMenuManager} from "./LinkedMenuManager";
+import {BackTesting, ModelSupplier, Predictor} from "./BackTesting";
 
 function setDimensions(canvas: HTMLCanvasElement, cssWidth: number, cssHeight: number) {
     cssWidth = 1280;
@@ -26,21 +25,51 @@ function setDimensions(canvas: HTMLCanvasElement, cssWidth: number, cssHeight: n
     canvas.getContext("2d").scale(scale, scale);
 }
 
-let htmlCanvasElement: HTMLCanvasElement = <HTMLCanvasElement>document.createElement("canvas");
-htmlCanvasElement.classList.add("forecasting-canvas");
-document.body.appendChild(htmlCanvasElement);
+let htmlCanvasElement: HTMLCanvasElement = <HTMLCanvasElement>document.getElementById("chart");
 setDimensions(htmlCanvasElement, 1280, 720);
 let ctx = htmlCanvasElement.getContext("2d");
 
-document.body.appendChild(lineBreak());
-
-let dataInput: Element = document.createElement("textarea");
-dataInput.classList.add("forecasting-text-input");
-dataInput.setAttribute("rows", "10");
-dataInput.setAttribute("cols", "50");
-document.body.appendChild(dataInput);
+let dataInput: Element = document.getElementById("data");
 
 let chart = new ForecastChart(ctx);
+
+// Chained select menu
+let menuManager: LinkedMenuManager = new LinkedMenuManager();
+
+let orderSelect: HTMLSelectElement = <HTMLSelectElement>document.getElementById("order");
+let orderMenu: LinkedMenu = new LinkedMenu(orderSelect, new Map<string, LinkedMenu>());
+orderSelect.onchange = () => menuManager.selected(orderMenu);
+
+let methodSelect: HTMLSelectElement = <HTMLSelectElement>document.getElementById("method");
+let methodMenu: LinkedMenu = new LinkedMenu(methodSelect, new Map<string, LinkedMenu>([["polynomial", orderMenu]]));
+methodSelect.onchange = () => menuManager.selected(methodMenu);
+
+let providerSelect: HTMLSelectElement = <HTMLSelectElement>document.getElementById("provider");
+let providerMenu = new LinkedMenu(providerSelect, new Map<string, LinkedMenu>([["regression-js", methodMenu]]));
+providerSelect.onchange = () => menuManager.selected(providerMenu);
+
+menuManager.init(providerMenu, doSelection);
+
+function doSelection(selection: string[]) {
+    if (selection[0] === "regression-js") {
+        let points = chart.getData();
+
+        let modelSupplier = new class implements ModelSupplier {
+            getPredictor(points: Point2D[]): Predictor {
+                let result: Result = new RegressionJS().runFit(points, selection.slice(1));
+                return new class implements Predictor {
+                    predict(x: number): number {
+                        return result.predict(x)[1];
+                    }
+
+                }
+            }
+        }
+        let errors: number[][] = BackTesting.backTest(points, modelSupplier);
+        console.log(errors);
+        //TODO: graph the forecast + the residuals
+    }
+}
 
 let pointParser = new PointParser(new CSVParser());
 dataInput.addEventListener("input", (e: Event) => {
@@ -54,9 +83,6 @@ dataInput.addEventListener("input", (e: Event) => {
     }
     if (points.length !== 0) {
         chart.setData(points);
-        let result: Result = new BestFit().runFit(points);
-        let bestFit: Point2D[] = getBestFit(points, result);
-        chart.setBestFit(bestFit);
     }
 });
 

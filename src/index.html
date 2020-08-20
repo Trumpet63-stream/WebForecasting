@@ -5,6 +5,52 @@
     <title>Forecasting</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body></body>
+<body>
+<canvas id="chart" class="forecasting-canvas"></canvas>
+<br>
+<div id="input-container">
+    <textarea rows="10" cols="50" id="data" class="forecasting-text-input"></textarea>
+    <span id="menu">
+        <label for="provider">Curve Fitting Provider</label>
+        <select id="provider">
+            <option value="">--</option>
+            <option value="regression-js">regression-js</option>
+        </select>
+
+        <label for="method">Curve Fitting Method</label>
+        <select id="method">
+            <option value="">--</option>
+            <option value="linear">Linear</option>
+            <option value="polynomial">Polynomial</option>
+            <option value="power">Power</option>
+            <option value="exponential">Exponential</option>
+            <option value="logarithmic">Logarithmic</option>
+        </select>
+
+        <label for="order">Order of Polynomial</label>
+        <select id="order">
+            <option value="">--</option>
+            <option value="2">Quadratic</option>
+            <option value="3">Cubic</option>
+            <option value="4">4th Order</option>
+            <option value="5">5th Order</option>
+        </select>
+    </span>
+</div>
+<!--new Option("Curve Fitting Provider", "", "", [-->
+<!--    new Option("Regression Method", "regression-js", "regression-js", [-->
+<!--        new Option("Order", "Polynomial", "polynomial", [-->
+<!--            new Option("", "Linear", "1", []),-->
+<!--            new Option("", "Quadratic", "2", []),-->
+<!--            new Option("", "3rd Order", "3", []),-->
+<!--            new Option("", "4rd Order", "4", []),-->
+<!--            new Option("", "5rd Order", "5", []),-->
+<!--        ]),-->
+<!--        new Option("", "Power", "power", []),-->
+<!--        new Option("", "Exponential", "exponential", []),-->
+<!--        new Option("", "Logarithmic", "logarithmic", [])-->
+<!--    ])-->
+<!--]);-->
+</body>
 <script type="text/javascript" src="../dist/bundle.js"></script>
 </html>

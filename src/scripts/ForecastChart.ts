@@ -3,7 +3,9 @@ import Chart from "chart.js";
 
 export class ForecastChart {
     private chart: Chart;
+    private chartData: Point2D[];
     private options = {
+        responsive: false,
         scales: {
             xAxes: [{
                 ticks: {
@@ -29,9 +31,15 @@ export class ForecastChart {
         });
     }
 
+    public getData(): Point2D[] {
+        return this.chartData;
+    }
+
     public setData(points: Point2D[]) {
+        this.chartData = points;
         this.chart.data.datasets[0] = {
             label: "Input",
+            pointBackgroundColor: 'rgba(0, 0, 255, 0.5)',
             data: points
         }
         this.chart.update();
