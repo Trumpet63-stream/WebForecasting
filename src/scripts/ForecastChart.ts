@@ -1,5 +1,5 @@
 import {Point2D} from "./Point2D";
-import Chart from "chart.js";
+import Chart, {ChartColor, ChartDataSets} from "chart.js";
 
 export class ForecastChart {
     private chart: Chart;
@@ -37,19 +37,36 @@ export class ForecastChart {
 
     public setData(points: Point2D[]) {
         this.chartData = points;
-        this.chart.data.datasets[0] = {
-            label: "Input",
-            pointBackgroundColor: 'rgba(0, 0, 255, 0.5)',
-            data: points
-        }
-        this.chart.update();
+        this.putData(points, "Input", 'rgba(0, 0, 255, 0.5)');
     }
 
     public setBestFit(points: Point2D[]) {
-        this.chart.data.datasets[1] = {
-            label: "Best Fit",
+        this.putData(points, "Best Fit", undefined);
+    }
+
+    public setForecast(points: Point2D[]) {
+        this.putData(points, "Forecast", 'rgba(0, 255, 0, 0.5)');
+    }
+
+    public setBacktesting(points: Point2D[]) {
+        this.putData(points, "Backtesting", 'rgba(255, 0, 0, 0.2)');
+    }
+
+    private putData(points: Point2D[], label: string, pointColor: ChartColor) {
+        let datasets: ChartDataSets[] = this.chart.data.datasets;
+        let index: number = datasets.length;
+        for (let i = 0; i < datasets.length; i++) {
+            if (label === datasets[i].label) {
+                index = i;
+            }
+        }
+
+        this.chart.data.datasets[index] = {
+            label: label,
+            pointBackgroundColor: pointColor,
             data: points
         }
+
         this.chart.update();
     }
 }

@@ -61,17 +61,71 @@ function doSelection(selection: string[]) {
                     predict(x: number): number {
                         return result.predict(x)[1];
                     }
-
                 }
             }
         }
         let errors: number[][] = BackTesting.backTest(points, modelSupplier);
-        console.log(errors);
-        //TODO: graph the forecast + the residuals
+
+        let inputDataSize: number = Math.floor(points.length * BackTesting.ratio);
+        let sample: Point2D[] = points.slice(points.length - inputDataSize, points.length);
+        let predictor: Predictor = modelSupplier.getPredictor(sample);
+        let forecast: Point2D[] = [];
+        for (let i = 0; i < sample.length; i++) {
+            forecast.push(new Point2D(sample[i].x, predictor.predict(sample[i].x)));
+        }
+
+        let futureDataStartIndex: number = forecast.length;
+        for (let i = 1; i < errors.length; i++) {
+            if (errors[i].length > 0) {
+                let x: number = points[points.length - 1].x + BackTesting.timeBetweenPoints * i;
+                let prediction: number = predictor.predict(x);
+                forecast.push(new Point2D(x, prediction));
+            }
+        }
+        chart.setForecast(forecast);
+
+        let futurePoints = forecast.slice(futureDataStartIndex - 1);
+        let summary: Point2D[] = getForecastQuantile(futurePoints, errors, 0.95).concat(
+            getForecastQuantile(futurePoints, errors, 0.5)
+        ).concat(
+            getForecastQuantile(futurePoints, errors, 0.05)
+        );
+        chart.setBacktesting(summary);
     }
 }
 
-let pointParser = new PointParser(new CSVParser());
+function getForecastQuantile(forecast: Point2D[], errors: number[][], q: number): Point2D[] {
+    let forecastQuantile: Point2D[] = [];
+    for (let i = 1; i < forecast.length; i++) {
+        let errorQuantile: number = quantile(errors[i], q);
+        forecastQuantile.push(new Point2D(forecast[i].x, forecast[i].y + errorQuantile));
+    }
+    return forecastQuantile;
+}
+
+function quantile(arr: number[], q: number) {
+    let sorted = getSortedAscending(arr);
+    let pos = (sorted.length - 1) * q;
+    let base = Math.floor(pos);
+    let rest = pos - base;
+    if (sorted[base + 1] !== undefined) {
+        return sorted[base] + rest * (sorted[base + 1] - sorted[base]);
+    } else {
+        return sorted[base];
+    }
+}
+
+function getSortedAscending(a: number[]): number[] {
+    let copy: number[] = [];
+    for (let i = 0; i < a.length; i++) {
+        copy.push(a[i]);
+    }
+    return copy.sort((a, b) => a - b);
+}
+
+let
+
+    pointParser = new PointParser(new CSVParser());
 dataInput.addEventListener("input", (e: Event) => {
     let points: Point2D[] = [];
     try {

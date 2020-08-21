@@ -9,11 +9,12 @@ export interface ModelSupplier {
 }
 
 export abstract class BackTesting {
-    private static timeBetweenPoints: number = 86400000;
-    private static ratio: number = 0.5;
+    public static timeBetweenPoints: number = 86400000;
+    public static ratio: number = 0.5;
 
     // Note: assumes points are sorted
     public static backTest(points: Point2D[], supplier: ModelSupplier): number[][] {
+        let totalBackTests: number = 0;
         let errors: number[][] = [];
         let inputDataSize: number = Math.floor(points.length * this.ratio);
 
@@ -27,10 +28,23 @@ export abstract class BackTesting {
                 let numUnitsInFuture = Math.round((futurePoint.x - sample[sample.length - 1].x) / this.timeBetweenPoints);
                 this.ensureCapacity(errors, numUnitsInFuture + 1);
                 errors[numUnitsInFuture].push(prediction - futurePoint.y);
+                totalBackTests++;
             }
         }
+        console.log("Total backtests = " + totalBackTests);
 
+        BackTesting.report(errors);
         return errors;
+    }
+
+    private static report(errors: number[][]) {
+        // let output: HTMLTextAreaElement = document.createElement("textarea");
+        // let report = "";
+        // for (let i = 0; i < errors.length; i++) {
+        //     report += errors[i].join(",") + ";\n"
+        // }
+        // output.value = report;
+        // document.body.appendChild(output);
     }
 
     private static ensureCapacity(errors: number[][], capacity: number) {
