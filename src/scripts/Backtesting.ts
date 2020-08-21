@@ -8,7 +8,7 @@ export interface ModelSupplier {
     getPredictor(points: Point2D[]): Predictor;
 }
 
-export abstract class BackTesting {
+export abstract class Backtesting {
     public static timeBetweenPoints: number = 86400000;
     public static ratio: number = 0.5;
 
@@ -33,7 +33,7 @@ export abstract class BackTesting {
         }
         console.log("Total backtests = " + totalBackTests);
 
-        BackTesting.report(errors);
+        Backtesting.report(errors);
         return errors;
     }
 

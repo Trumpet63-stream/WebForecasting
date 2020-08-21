@@ -7,7 +7,8 @@ import {RegressionJS} from "./RegressionJS";
 import {Result} from "regression";
 import {LinkedMenu} from "./LinkedMenu";
 import {LinkedMenuManager} from "./LinkedMenuManager";
-import {BackTesting, ModelSupplier, Predictor} from "./BackTesting";
+import {Backtesting, Predictor} from "./Backtesting";
+import {QuantileHelper} from "./QuantileHelper";
 
 function setDimensions(canvas: HTMLCanvasElement, cssWidth: number, cssHeight: number) {
     cssWidth = 1280;
@@ -53,20 +54,10 @@ menuManager.init(providerMenu, doSelection);
 function doSelection(selection: string[]) {
     if (selection[0] === "regression-js") {
         let points = chart.getData();
+        let modelSupplier = RegressionJS.getModelSupplier(selection.slice(1));
+        let errors: number[][] = Backtesting.backTest(points, modelSupplier);
 
-        let modelSupplier = new class implements ModelSupplier {
-            getPredictor(points: Point2D[]): Predictor {
-                let result: Result = new RegressionJS().runFit(points, selection.slice(1));
-                return new class implements Predictor {
-                    predict(x: number): number {
-                        return result.predict(x)[1];
-                    }
-                }
-            }
-        }
-        let errors: number[][] = BackTesting.backTest(points, modelSupplier);
-
-        let inputDataSize: number = Math.floor(points.length * BackTesting.ratio);
+        let inputDataSize: number = Math.floor(points.length * Backtesting.ratio);
         let sample: Point2D[] = points.slice(points.length - inputDataSize, points.length);
         let predictor: Predictor = modelSupplier.getPredictor(sample);
         let forecast: Point2D[] = [];
@@ -77,7 +68,7 @@ function doSelection(selection: string[]) {
         let futureDataStartIndex: number = forecast.length;
         for (let i = 1; i < errors.length; i++) {
             if (errors[i].length > 0) {
-                let x: number = points[points.length - 1].x + BackTesting.timeBetweenPoints * i;
+                let x: number = points[points.length - 1].x + Backtesting.timeBetweenPoints * i;
                 let prediction: number = predictor.predict(x);
                 forecast.push(new Point2D(x, prediction));
             }
@@ -85,51 +76,20 @@ function doSelection(selection: string[]) {
         chart.setForecast(forecast);
 
         let futurePoints = forecast.slice(futureDataStartIndex - 1);
-        let summary: Point2D[] = getForecastQuantile(futurePoints, errors, 0.95).concat(
-            getForecastQuantile(futurePoints, errors, 0.5)
+        let summary: Point2D[] = QuantileHelper.getForecastQuantile(futurePoints, errors, 0.95).concat(
+            QuantileHelper.getForecastQuantile(futurePoints, errors, 0.5)
         ).concat(
-            getForecastQuantile(futurePoints, errors, 0.05)
+            QuantileHelper.getForecastQuantile(futurePoints, errors, 0.05)
         );
         chart.setBacktesting(summary);
     }
 }
 
-function getForecastQuantile(forecast: Point2D[], errors: number[][], q: number): Point2D[] {
-    let forecastQuantile: Point2D[] = [];
-    for (let i = 1; i < forecast.length; i++) {
-        let errorQuantile: number = quantile(errors[i], q);
-        forecastQuantile.push(new Point2D(forecast[i].x, forecast[i].y + errorQuantile));
-    }
-    return forecastQuantile;
-}
-
-function quantile(arr: number[], q: number) {
-    let sorted = getSortedAscending(arr);
-    let pos = (sorted.length - 1) * q;
-    let base = Math.floor(pos);
-    let rest = pos - base;
-    if (sorted[base + 1] !== undefined) {
-        return sorted[base] + rest * (sorted[base + 1] - sorted[base]);
-    } else {
-        return sorted[base];
-    }
-}
-
-function getSortedAscending(a: number[]): number[] {
-    let copy: number[] = [];
-    for (let i = 0; i < a.length; i++) {
-        copy.push(a[i]);
-    }
-    return copy.sort((a, b) => a - b);
-}
-
-let
-
-    pointParser = new PointParser(new CSVParser());
+let pointParser = new PointParser(new CSVParser());
 dataInput.addEventListener("input", (e: Event) => {
     let points: Point2D[] = [];
     try {
-        points = pointParser.parse((<HTMLInputElement>e.target).value);
+        points = pointParser.parseTimeSeries((<HTMLInputElement>e.target).value);
     } catch (e) {
         if (!(e instanceof ParsingError)) {
             throw e;

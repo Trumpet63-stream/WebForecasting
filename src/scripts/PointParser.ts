@@ -10,7 +10,7 @@ export class PointParser {
         this.parser = parser;
     }
 
-    public parse(string: string): Point2D[] {
+    public parseTimeSeries(string: string): Point2D[] {
         let values: string[][] = this.parser.parse(string);
         this.validateValues(values);
         return PointParser.getPoints(values);
@@ -33,9 +33,7 @@ export class PointParser {
     }
 
     private static isDateNumberPair(row: string[]): boolean {
-        !isNaN(PointParser.dateToNumber(row[0]));
-        !isNaN(parseFloat(row[1]));
-        return true;
+        return !isNaN(PointParser.dateToNumber(row[0])) && !isNaN(parseFloat(row[1]));
     }
 
     private static getPoints(values: string[][]): Point2D[] {
@@ -46,7 +44,7 @@ export class PointParser {
             let y = parseFloat(row[1]);
             points.push(new Point2D(x, y));
         }
-        return points;
+        return points.sort(((a, b) => a.x - b.x));
     }
 
     private static dateToNumber(date: string): number {
