@@ -1,5 +1,5 @@
 import {PointParser} from "../src/scripts/PointParser";
-import {FakeCSVParser} from "../test_resources/mocks/FakeCSVParser";
+import {FakeCSVParser} from "../test_resources/fakeClasses/FakeCSVParser";
 import {ParsingError} from "../src/scripts/errors/ParsingError";
 import {Point2D} from "../src/scripts/Point2D";
 

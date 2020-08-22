@@ -1,13 +1,13 @@
 import regression, {DataPoint, Options, Result} from 'regression';
 import {Point2D} from "./Point2D";
-import {ModelSupplier, Predictor} from "./Backtesting";
+import {Model, ModelSupplier} from "./Backtesting";
 
 export class RegressionJS {
     private globalOptions: Options = {
         precision: 100
     }
 
-    public runFit(points: Point2D[], options: string[]): Result {
+    private runFit(points: Point2D[], options: string[]): Result {
         let data: DataPoint[] = RegressionJS.pointsToArrays(points);
         switch (options[0]) {
             case "linear":
@@ -36,9 +36,9 @@ export class RegressionJS {
 
     public static getModelSupplier(options: string[]): ModelSupplier {
         return new class implements ModelSupplier {
-            getPredictor(points: Point2D[]): Predictor {
+            getModel(points: Point2D[]): Model {
                 let result: Result = new RegressionJS().runFit(points, options);
-                return new class implements Predictor {
+                return new class implements Model {
                     predict(x: number): number {
                         return result.predict(x)[1];
                     }

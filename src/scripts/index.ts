@@ -4,11 +4,11 @@ import {PointParser} from "./PointParser";
 import {CSVParser} from "./CSVParser";
 import {ForecastChart} from "./ForecastChart";
 import {RegressionJS} from "./RegressionJS";
-import {Result} from "regression";
 import {LinkedMenu} from "./LinkedMenu";
 import {LinkedMenuManager} from "./LinkedMenuManager";
-import {Backtesting, Predictor} from "./Backtesting";
+import {Backtesting, Model, ModelSupplier} from "./Backtesting";
 import {QuantileHelper} from "./QuantileHelper";
+import {DefaultModels} from "./DefaultModels";
 
 function setDimensions(canvas: HTMLCanvasElement, cssWidth: number, cssHeight: number) {
     cssWidth = 1280;
@@ -41,48 +41,64 @@ let orderSelect: HTMLSelectElement = <HTMLSelectElement>document.getElementById(
 let orderMenu: LinkedMenu = new LinkedMenu(orderSelect, new Map<string, LinkedMenu>());
 orderSelect.onchange = () => menuManager.selected(orderMenu);
 
-let methodSelect: HTMLSelectElement = <HTMLSelectElement>document.getElementById("method");
-let methodMenu: LinkedMenu = new LinkedMenu(methodSelect, new Map<string, LinkedMenu>([["polynomial", orderMenu]]));
-methodSelect.onchange = () => menuManager.selected(methodMenu);
+let regressionJSmethodSelect: HTMLSelectElement = <HTMLSelectElement>document.getElementById("regression-js_method");
+let regressionJSmethodMenu: LinkedMenu = new LinkedMenu(regressionJSmethodSelect, new Map<string, LinkedMenu>([
+    ["polynomial", orderMenu]
+]));
+regressionJSmethodSelect.onchange = () => menuManager.selected(regressionJSmethodMenu);
+
+let defaultMethodSelect: HTMLSelectElement = <HTMLSelectElement>document.getElementById("default_method");
+let defaultMethodMenu: LinkedMenu = new LinkedMenu(defaultMethodSelect, new Map<string, LinkedMenu>());
+defaultMethodSelect.onchange = () => menuManager.selected(defaultMethodMenu);
 
 let providerSelect: HTMLSelectElement = <HTMLSelectElement>document.getElementById("provider");
-let providerMenu = new LinkedMenu(providerSelect, new Map<string, LinkedMenu>([["regression-js", methodMenu]]));
+let providerMenu = new LinkedMenu(providerSelect, new Map<string, LinkedMenu>([
+    ["regression-js", regressionJSmethodMenu],
+    ["default", defaultMethodMenu]
+]));
 providerSelect.onchange = () => menuManager.selected(providerMenu);
 
 menuManager.init(providerMenu, doSelection);
 
 function doSelection(selection: string[]) {
+    let points = chart.getData();
     if (selection[0] === "regression-js") {
-        let points = chart.getData();
         let modelSupplier = RegressionJS.getModelSupplier(selection.slice(1));
-        let errors: number[][] = Backtesting.backTest(points, modelSupplier);
-
-        let inputDataSize: number = Math.floor(points.length * Backtesting.ratio);
-        let sample: Point2D[] = points.slice(points.length - inputDataSize, points.length);
-        let predictor: Predictor = modelSupplier.getPredictor(sample);
-        let forecast: Point2D[] = [];
-        for (let i = 0; i < sample.length; i++) {
-            forecast.push(new Point2D(sample[i].x, predictor.predict(sample[i].x)));
-        }
-
-        let futureDataStartIndex: number = forecast.length;
-        for (let i = 1; i < errors.length; i++) {
-            if (errors[i].length > 0) {
-                let x: number = points[points.length - 1].x + Backtesting.timeBetweenPoints * i;
-                let prediction: number = predictor.predict(x);
-                forecast.push(new Point2D(x, prediction));
-            }
-        }
-        chart.setForecast(forecast);
-
-        let futurePoints = forecast.slice(futureDataStartIndex - 1);
-        let summary: Point2D[] = QuantileHelper.getForecastQuantile(futurePoints, errors, 0.95).concat(
-            QuantileHelper.getForecastQuantile(futurePoints, errors, 0.5)
-        ).concat(
-            QuantileHelper.getForecastQuantile(futurePoints, errors, 0.05)
-        );
-        chart.setBacktesting(summary);
+        showForecastAndBacktests(points, modelSupplier);
+    } else if (selection[0] === "default") {
+        let modelSupplier = DefaultModels.getModelSupplier(selection.slice(1));
+        showForecastAndBacktests(points, modelSupplier);
     }
+}
+
+function showForecastAndBacktests(points: Point2D[], modelSupplier: ModelSupplier) {
+    let errors: number[][] = Backtesting.backTest(points, modelSupplier);
+
+    let inputDataSize: number = Math.floor(points.length * Backtesting.ratio);
+    let sample: Point2D[] = points.slice(points.length - inputDataSize, points.length);
+    let predictor: Model = modelSupplier.getModel(sample);
+    let forecast: Point2D[] = [];
+    for (let i = 0; i < sample.length; i++) {
+        forecast.push(new Point2D(sample[i].x, predictor.predict(sample[i].x)));
+    }
+
+    let futureDataStartIndex: number = forecast.length;
+    for (let i = 1; i < errors.length; i++) {
+        if (errors[i].length > 0) {
+            let x: number = points[points.length - 1].x + Backtesting.timeBetweenPoints * i;
+            let prediction: number = predictor.predict(x);
+            forecast.push(new Point2D(x, prediction));
+        }
+    }
+    chart.setForecast(forecast);
+
+    let futurePoints = forecast.slice(futureDataStartIndex - 1);
+    let summary: Point2D[] = QuantileHelper.getForecastQuantile(futurePoints, errors, 0.95).concat(
+        QuantileHelper.getForecastQuantile(futurePoints, errors, 0.5)
+    ).concat(
+        QuantileHelper.getForecastQuantile(futurePoints, errors, 0.05)
+    );
+    chart.setBacktesting(summary);
 }
 
 let pointParser = new PointParser(new CSVParser());
@@ -97,13 +113,6 @@ dataInput.addEventListener("input", (e: Event) => {
     }
     if (points.length !== 0) {
         chart.setData(points);
+        menuManager.refireLastSelection();
     }
 });
-
-function getBestFit(points: Point2D[], result: Result) {
-    let bestFit = [];
-    for (let i = 0; i < points.length; i++) {
-        bestFit.push(new Point2D(points[i].x, result.predict(points[i].x)[1]));
-    }
-    return bestFit
-}

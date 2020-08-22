@@ -3,6 +3,7 @@ import {LinkedMenu} from "./LinkedMenu";
 export class LinkedMenuManager {
     private rootMenu: LinkedMenu;
     private onSelectionComplete: (selection: string[]) => void;
+    private currentSelection: LinkedMenu;
 
     public init(rootMenu: LinkedMenu, onSelectionComplete: (selection: string[]) => void): void {
         this.rootMenu = rootMenu;
@@ -11,6 +12,7 @@ export class LinkedMenuManager {
     }
 
     public selected(menu: LinkedMenu) {
+        this.currentSelection = menu;
         this.hideAllChildren(menu);
         if (menu.hasNextMenu()) {
             menu.getNextMenu().show();
@@ -38,5 +40,9 @@ export class LinkedMenuManager {
             currentMenu = currentMenu.getNextMenu();
         }
         this.onSelectionComplete(selection);
+    }
+
+    public refireLastSelection(): void {
+        this.selected(this.currentSelection);
     }
 }

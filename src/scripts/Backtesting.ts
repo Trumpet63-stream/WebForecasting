@@ -1,40 +1,63 @@
 import {Point2D} from "./Point2D";
 
-export interface Predictor {
+export interface Model {
     predict(x: number): number;
 }
 
 export interface ModelSupplier {
-    getPredictor(points: Point2D[]): Predictor;
+    getModel(points: Point2D[]): Model;
 }
 
 export abstract class Backtesting {
     public static timeBetweenPoints: number = 86400000;
     public static ratio: number = 0.5;
 
-    // Note: assumes points are sorted
+    // Note: assumes points are sorted ascending by x value
     public static backTest(points: Point2D[], supplier: ModelSupplier): number[][] {
         let totalBackTests: number = 0;
         let errors: number[][] = [];
-        let inputDataSize: number = Math.floor(points.length * this.ratio);
+        let sampleDataSize: number = Math.floor(points.length * this.ratio);
+        let sampleStartTime = points[0].x;
+        let sampleStartIndex = 0;
+        let sampleEndTime = sampleStartTime + (sampleDataSize - 1) * this.timeBetweenPoints;
+        let sampleEndIndex = 0;
+        let finalEndTime = points[points.length - 1].x;
 
-        for (let inputEnd = inputDataSize; inputEnd < points.length; inputEnd++) {
-            let sample: Point2D[] = points.slice(inputEnd - inputDataSize, inputEnd);
-            let predictor: Predictor = supplier.getPredictor(sample);
-
-            for (let futureIndex = inputEnd; futureIndex < points.length; futureIndex++) {
+        while (sampleEndTime < finalEndTime) {
+            sampleStartIndex = this.getSampleStartIndex(sampleStartIndex, points, sampleStartTime);
+            sampleEndIndex = this.getSampleEndIndex(sampleEndIndex, points, sampleEndTime);
+            let sample: Point2D[] = points.slice(sampleStartIndex, sampleEndIndex + 1);
+            let model: Model = supplier.getModel(sample);
+            for (let futureIndex = sampleEndIndex + 1; futureIndex < points.length; futureIndex++) {
                 let futurePoint = points[futureIndex];
-                let prediction = predictor.predict(futurePoint.x);
-                let numUnitsInFuture = Math.round((futurePoint.x - sample[sample.length - 1].x) / this.timeBetweenPoints);
+                let prediction = model.predict(futurePoint.x);
+                let predictionError: number = prediction - futurePoint.y;
+                let numUnitsInFuture = Math.round((futurePoint.x - sampleEndTime) / this.timeBetweenPoints);
                 this.ensureCapacity(errors, numUnitsInFuture + 1);
-                errors[numUnitsInFuture].push(prediction - futurePoint.y);
+                errors[numUnitsInFuture].push(predictionError);
                 totalBackTests++;
             }
+
+            sampleStartTime += this.timeBetweenPoints;
+            sampleEndTime += this.timeBetweenPoints;
         }
-        console.log("Total backtests = " + totalBackTests);
 
         Backtesting.report(errors);
         return errors;
+    }
+
+    private static getSampleEndIndex(sampleEndIndex: number, points: Point2D[], sampleEndTime: number) {
+        while (sampleEndIndex + 1 < points.length - 1 && points[sampleEndIndex + 1].x <= sampleEndTime) {
+            sampleEndIndex++;
+        }
+        return sampleEndIndex;
+    }
+
+    private static getSampleStartIndex(sampleStartIndex: number, points: Point2D[], sampleStartTime: number) {
+        while (sampleStartIndex + 1 < points.length - 1 && points[sampleStartIndex].x < sampleStartTime) {
+            sampleStartIndex++;
+        }
+        return sampleStartIndex;
     }
 
     private static report(errors: number[][]) {

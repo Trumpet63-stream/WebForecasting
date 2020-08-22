@@ -29,15 +29,15 @@ it('does quantiles of tiny arrays correctly', () => {
 
 it('adds quantile to forecast correctly', () => {
     let forecast: Point2D[] = [point(1), point(2), point(3), point(4), point(5), point(6)];
-    let errors: number[][] = [[], [1], [1], [1], [1], [1], [1]];
+    let errors: number[][] = [[], [1], [2], [3], [4], [5]];
     let forecastQuantile: Point2D[] = QuantileHelper.getForecastQuantile(forecast, errors, 1);
-    expect(forecastQuantile).toEqual([point(3), point(4), point(5), point(6), point(7)]);
+    expect(forecastQuantile).toEqual([point(1), point(1), point(1), point(1), point(1)]);
 });
 
 function expectQuantileOfArrayToBe(q: number, values: number[], expectedValue: number) {
     let forecast: Point2D[] = [point(0), point(0)];
     let forecastQuantile: Point2D[] = QuantileHelper.getForecastQuantile(forecast, [[], values], q);
-    expect(forecastQuantile[0].y).toEqual(expectedValue);
+    expect(forecastQuantile[0].y === -1 * expectedValue).toEqual(true);
 }
 
 function getRange(start: number, end: number, increment: number) {

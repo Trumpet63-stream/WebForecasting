@@ -14,11 +14,18 @@
         <label for="provider">Curve Fitting Provider</label>
         <select id="provider">
             <option value="">--</option>
+            <option value="default">Default</option>
             <option value="regression-js">regression-js</option>
         </select>
 
-        <label for="method">Curve Fitting Method</label>
-        <select id="method">
+        <label for="default_method">Curve Fitting Method</label>
+        <select id="default_method">
+            <option value="">--</option>
+            <option value="previous">Flatline</option>
+        </select>
+
+        <label for="regression-js_method">Curve Fitting Method</label>
+        <select id="regression-js_method">
             <option value="">--</option>
             <option value="linear">Linear</option>
             <option value="polynomial">Polynomial</option>
@@ -37,20 +44,6 @@
         </select>
     </span>
 </div>
-<!--new Option("Curve Fitting Provider", "", "", [-->
-<!--    new Option("Regression Method", "regression-js", "regression-js", [-->
-<!--        new Option("Order", "Polynomial", "polynomial", [-->
-<!--            new Option("", "Linear", "1", []),-->
-<!--            new Option("", "Quadratic", "2", []),-->
-<!--            new Option("", "3rd Order", "3", []),-->
-<!--            new Option("", "4rd Order", "4", []),-->
-<!--            new Option("", "5rd Order", "5", []),-->
-<!--        ]),-->
-<!--        new Option("", "Power", "power", []),-->
-<!--        new Option("", "Exponential", "exponential", []),-->
-<!--        new Option("", "Logarithmic", "logarithmic", [])-->
-<!--    ])-->
-<!--]);-->
 </body>
 <script type="text/javascript" src="../dist/bundle.js"></script>
 </html>

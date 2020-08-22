@@ -5,7 +5,7 @@ export abstract class QuantileHelper {
         let forecastQuantile: Point2D[] = [];
         for (let i = 1; i < forecast.length; i++) {
             let errorQuantile: number = this.quantile(errors[i], q);
-            forecastQuantile.push(new Point2D(forecast[i].x, forecast[i].y + errorQuantile));
+            forecastQuantile.push(new Point2D(forecast[i].x, forecast[i].y - errorQuantile));
         }
         return forecastQuantile;
     }
