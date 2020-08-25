@@ -10,9 +10,9 @@ export class DefaultModels {
     }
 
     private static previousModelSupplier() {
-        return new class implements ModelSupplier {
+        return {
             getModel(points: Point2D[]): Model {
-                return new class implements Model {
+                return {
                     predict(x: number): number {
                         return points[points.length - 1].y;
                     }

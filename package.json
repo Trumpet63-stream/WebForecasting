@@ -18,6 +18,7 @@
     "webpack-cli": "^3.3.12"
   },
   "dependencies": {
+    "@tensorflow/tfjs": "^2.3.0",
     "@types/chart.js": "^2.9.24",
     "@types/jest": "^26.0.10",
     "@types/regression": "^2.0.0",

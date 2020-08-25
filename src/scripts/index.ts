@@ -3,12 +3,9 @@ import {Point2D} from "./Point2D";
 import {PointParser} from "./PointParser";
 import {CSVParser} from "./CSVParser";
 import {ForecastChart} from "./ForecastChart";
-import {RegressionJS} from "./RegressionJS";
-import {LinkedMenu} from "./LinkedMenu";
-import {LinkedMenuManager} from "./LinkedMenuManager";
 import {Backtesting, Model, ModelSupplier} from "./Backtesting";
 import {QuantileHelper} from "./QuantileHelper";
-import {DefaultModels} from "./DefaultModels";
+import {menuManager} from "./Menus";
 
 function setDimensions(canvas: HTMLCanvasElement, cssWidth: number, cssHeight: number) {
     cssWidth = 1280;
@@ -32,46 +29,9 @@ let ctx = htmlCanvasElement.getContext("2d");
 
 let dataInput: Element = document.getElementById("data");
 
-let chart = new ForecastChart(ctx);
+export const chart = new ForecastChart(ctx);
 
-// Chained select menu
-let menuManager: LinkedMenuManager = new LinkedMenuManager();
-
-let orderSelect: HTMLSelectElement = <HTMLSelectElement>document.getElementById("order");
-let orderMenu: LinkedMenu = new LinkedMenu(orderSelect, new Map<string, LinkedMenu>());
-orderSelect.onchange = () => menuManager.selected(orderMenu);
-
-let regressionJSmethodSelect: HTMLSelectElement = <HTMLSelectElement>document.getElementById("regression-js_method");
-let regressionJSmethodMenu: LinkedMenu = new LinkedMenu(regressionJSmethodSelect, new Map<string, LinkedMenu>([
-    ["polynomial", orderMenu]
-]));
-regressionJSmethodSelect.onchange = () => menuManager.selected(regressionJSmethodMenu);
-
-let defaultMethodSelect: HTMLSelectElement = <HTMLSelectElement>document.getElementById("default_method");
-let defaultMethodMenu: LinkedMenu = new LinkedMenu(defaultMethodSelect, new Map<string, LinkedMenu>());
-defaultMethodSelect.onchange = () => menuManager.selected(defaultMethodMenu);
-
-let providerSelect: HTMLSelectElement = <HTMLSelectElement>document.getElementById("provider");
-let providerMenu = new LinkedMenu(providerSelect, new Map<string, LinkedMenu>([
-    ["regression-js", regressionJSmethodMenu],
-    ["default", defaultMethodMenu]
-]));
-providerSelect.onchange = () => menuManager.selected(providerMenu);
-
-menuManager.init(providerMenu, doSelection);
-
-function doSelection(selection: string[]) {
-    let points = chart.getData();
-    if (selection[0] === "regression-js") {
-        let modelSupplier = RegressionJS.getModelSupplier(selection.slice(1));
-        showForecastAndBacktests(points, modelSupplier);
-    } else if (selection[0] === "default") {
-        let modelSupplier = DefaultModels.getModelSupplier(selection.slice(1));
-        showForecastAndBacktests(points, modelSupplier);
-    }
-}
-
-function showForecastAndBacktests(points: Point2D[], modelSupplier: ModelSupplier) {
+export function showForecastAndBacktests(points: Point2D[], modelSupplier: ModelSupplier) {
     let errors: number[][] = Backtesting.backTest(points, modelSupplier);
 
     let inputDataSize: number = Math.floor(points.length * Backtesting.ratio);

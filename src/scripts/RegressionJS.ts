@@ -35,10 +35,10 @@ export class RegressionJS {
     }
 
     public static getModelSupplier(options: string[]): ModelSupplier {
-        return new class implements ModelSupplier {
+        return {
             getModel(points: Point2D[]): Model {
                 let result: Result = new RegressionJS().runFit(points, options);
-                return new class implements Model {
+                return {
                     predict(x: number): number {
                         return result.predict(x)[1];
                     }
