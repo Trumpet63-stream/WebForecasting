@@ -2,8 +2,8 @@ import {LinkedMenuManager} from "./LinkedMenuManager";
 import {LinkedMenu} from "./LinkedMenu";
 import {RegressionJS} from "./RegressionJS";
 import {DefaultModels} from "./DefaultModels";
-import {chart, showForecastAndBacktests} from "./index";
-import {NNModel} from "../NNModel";
+import {chart, doFit, showForecastAndBacktests} from "./index";
+import {NNModel} from "./NNModel";
 
 export const menuManager: LinkedMenuManager = new LinkedMenuManager();
 
@@ -37,14 +37,14 @@ menuManager.init(providerMenu, doSelection);
 
 function doSelection(selection: string[]) {
     let points = chart.getData();
-    if (selection[0] === "default") {
+    if (selection[0] === "regression-js") {
         let modelSupplier = RegressionJS.getModelSupplier(selection.slice(1));
         showForecastAndBacktests(points, modelSupplier);
-    } else if (selection[0] === "regression-js") {
+    } else if (selection[0] === "default") {
         let modelSupplier = DefaultModels.getModelSupplier(selection.slice(1));
         showForecastAndBacktests(points, modelSupplier);
     } else if (selection[0] === "tensorflow") {
         let modelSupplier = NNModel.getModelSupplier(selection.slice(1));
-        showForecastAndBacktests(points, modelSupplier);
+        doFit(points, modelSupplier);
     }
 }

@@ -6,6 +6,7 @@ import {ForecastChart} from "./ForecastChart";
 import {Backtesting, Model, ModelSupplier} from "./Backtesting";
 import {QuantileHelper} from "./QuantileHelper";
 import {menuManager} from "./Menus";
+import {Visor} from "./Visor";
 
 function setDimensions(canvas: HTMLCanvasElement, cssWidth: number, cssHeight: number) {
     cssWidth = 1280;
@@ -31,12 +32,42 @@ let dataInput: Element = document.getElementById("data");
 
 export const chart = new ForecastChart(ctx);
 
-export function showForecastAndBacktests(points: Point2D[], modelSupplier: ModelSupplier) {
-    let errors: number[][] = Backtesting.backTest(points, modelSupplier);
+export function doFit(points: Point2D[], modelSupplier: ModelSupplier) {
+    // let errors: number[][] = Backtesting.slidingWindowBacktest(points, modelSupplier);
 
     let inputDataSize: number = Math.floor(points.length * Backtesting.ratio);
     let sample: Point2D[] = points.slice(points.length - inputDataSize, points.length);
-    let predictor: Model = modelSupplier.getModel(sample);
+    (<Promise<Model>>modelSupplier.getModel(sample))
+        .then((model) => {
+            let forecast: Point2D[] = [];
+            for (let i = 0; i < sample.length; i++) {
+                forecast.push(new Point2D(sample[i].x, model.predict(sample[i].x)));
+            }
+
+            // let futureDataStartIndex: number = forecast.length;
+            for (let i = 1; i < inputDataSize; i++) {
+                let x: number = points[points.length - 1].x + Backtesting.timeBetweenPoints * i;
+                let prediction: number = model.predict(x);
+                forecast.push(new Point2D(x, prediction));
+            }
+            chart.setForecast(forecast);
+        });
+
+    // let futurePoints = forecast.slice(futureDataStartIndex - 1);
+    // let summary: Point2D[] = QuantileHelper.getForecastQuantile(futurePoints, errors, 0.95).concat(
+    //     QuantileHelper.getForecastQuantile(futurePoints, errors, 0.5)
+    // ).concat(
+    //     QuantileHelper.getForecastQuantile(futurePoints, errors, 0.05)
+    // );
+    // chart.setBacktesting(summary);
+}
+
+export function showForecastAndBacktests(points: Point2D[], modelSupplier: ModelSupplier) {
+    let errors: number[][] = Backtesting.slidingWindowBacktest(points, modelSupplier);
+
+    let inputDataSize: number = Math.floor(points.length * Backtesting.ratio);
+    let sample: Point2D[] = points.slice(points.length - inputDataSize, points.length);
+    let predictor: Model = <Model>modelSupplier.getModel(sample);
     let forecast: Point2D[] = [];
     for (let i = 0; i < sample.length; i++) {
         forecast.push(new Point2D(sample[i].x, predictor.predict(sample[i].x)));
@@ -76,3 +107,5 @@ dataInput.addEventListener("input", (e: Event) => {
         menuManager.refireLastSelection();
     }
 });
+
+Visor.init();

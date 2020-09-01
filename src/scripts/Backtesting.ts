@@ -5,7 +5,7 @@ export interface Model {
 }
 
 export interface ModelSupplier {
-    getModel(points: Point2D[]): Model;
+    getModel(points: Point2D[]): Model | Promise<Model>;
 }
 
 export abstract class Backtesting {
@@ -13,7 +13,7 @@ export abstract class Backtesting {
     public static ratio: number = 0.5;
 
     // Note: assumes points are sorted ascending by x value
-    public static backTest(points: Point2D[], supplier: ModelSupplier): number[][] {
+    public static slidingWindowBacktest(points: Point2D[], supplier: ModelSupplier): number[][] {
         let totalBackTests: number = 0;
         let errors: number[][] = [];
         let sampleDataSize: number = Math.floor(points.length * this.ratio);
@@ -27,7 +27,7 @@ export abstract class Backtesting {
             sampleStartIndex = this.getSampleStartIndex(sampleStartIndex, points, sampleStartTime);
             sampleEndIndex = this.getSampleEndIndex(sampleEndIndex, points, sampleEndTime);
             let sample: Point2D[] = points.slice(sampleStartIndex, sampleEndIndex + 1);
-            let model: Model = supplier.getModel(sample);
+            let model: Model = <Model>supplier.getModel(sample);
             for (let futureIndex = sampleEndIndex + 1; futureIndex < points.length; futureIndex++) {
                 let futurePoint = points[futureIndex];
                 let prediction = model.predict(futurePoint.x);

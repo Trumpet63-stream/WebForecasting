@@ -2,7 +2,6 @@ import {Point2D} from "../src/scripts/Point2D";
 import {Backtesting, ModelSupplier} from "../src/scripts/Backtesting";
 import {FakeModelSupplier} from "../test_resources/fakeClasses/FakeModelSupplier";
 import {FakeModel} from "../test_resources/fakeClasses/FakeModel";
-import {mocked} from "ts-jest";
 
 let mockModel = {
     predict: jest.fn((x: number) => 0)
@@ -11,19 +10,6 @@ let mockModel = {
 let mockModelSupplier = {
     getModel: jest.fn((points: Point2D[]) => mockModel)
 }
-
-// jest.mock('../test_resources/fakeClasses/FakeModelSupplier', () => {
-//     return {
-//         FakeModelSupplier: jest.fn().mockImplementation(() => {
-//             return {
-//                 getModel: (points: Point2D[]) => {
-//                 },
-//             };
-//         })
-//     };
-// });
-
-let mockedFakeModelSupplier = mocked(FakeModelSupplier, true);
 
 beforeEach(() => {
     // Clears the record of calls to the mock constructor function and its methods
@@ -37,7 +23,7 @@ it("returns the right number of errors", () => {
     for (let i = 0; i < 5; i++) {
         points.push(new Point2D(points[i].x + oneDay, 0));
     }
-    let errors: number[][] = Backtesting.backTest(points, new FakeModelSupplier(new FakeModel()));
+    let errors: number[][] = Backtesting.slidingWindowBacktest(points, new FakeModelSupplier(new FakeModel()));
     expect(errors.length).toEqual(4);
     expect(errors[0].length).toEqual(0);
     expect(errors[1].length).toEqual(3);
@@ -55,7 +41,7 @@ it("skips missing data points", () => {
         new Point2D(5 * oneDay, 0),
         new Point2D(6 * oneDay, 0)
     ];
-    let errors: number[][] = Backtesting.backTest(points, new FakeModelSupplier(new FakeModel()));
+    let errors: number[][] = Backtesting.slidingWindowBacktest(points, new FakeModelSupplier(new FakeModel()));
     expect(errors.length).toEqual(5);
     expect(errors[0].length).toEqual(0);
     expect(errors[1].length).toEqual(3);
@@ -74,7 +60,7 @@ it("measures error correctly", () => {
         new Point2D(4 * oneDay, 4),
         new Point2D(5 * oneDay, 5)
     ];
-    let errors: number[][] = Backtesting.backTest(points, new FakeModelSupplier(new FakeModel()));
+    let errors: number[][] = Backtesting.slidingWindowBacktest(points, new FakeModelSupplier(new FakeModel()));
     expect(errors.length).toEqual(4);
     expect(errors[0]).toEqual([]);
     expect(errors[1]).toEqual([-3, -4, -5]);
@@ -93,7 +79,7 @@ it("uses model supplier correctly", () => {
     let points: Point2D[] = [point0, point1, point2, point4, point5, point6];
     let fakeModel: FakeModel = mockModel;
     let fakeModelSupplier: ModelSupplier = mockModelSupplier;
-    Backtesting.backTest(points, fakeModelSupplier);
+    Backtesting.slidingWindowBacktest(points, fakeModelSupplier);
 
     expect(fakeModelSupplier.getModel).toHaveBeenCalledTimes(4);
     expect(fakeModel.predict).toHaveBeenCalledTimes(9);

@@ -10,17 +10,18 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "jest": "^26.4.0",
-    "ts-jest": "^26.2.0",
-    "ts-loader": "^8.0.2",
+    "jest": "^26.4.2",
+    "ts-jest": "^26.3.0",
+    "ts-loader": "^8.0.3",
     "typescript": "^3.9.7",
     "webpack": "^4.44.1",
     "webpack-cli": "^3.3.12"
   },
   "dependencies": {
     "@tensorflow/tfjs": "^2.3.0",
+    "@tensorflow/tfjs-vis": "^1.4.3",
     "@types/chart.js": "^2.9.24",
-    "@types/jest": "^26.0.10",
+    "@types/jest": "^26.0.12",
     "@types/regression": "^2.0.0",
     "chart.js": "^2.9.3",
     "csv-string": "^4.0.1",
